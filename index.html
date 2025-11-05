@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-ag" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audityzer AI Agent PRD Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lato:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-primary': '#0D0D1A',
+              'brand-secondary': '#1A1A2E',
+              'brand-accent': '#2A2A4A',
+              'brand-blue': '#4A90E2',
+              'brand-text-primary': '#E0E0E0',
+              'brand-text-secondary': '#A0A0B0',
+            },
+            fontFamily: {
+              'inter': ['Inter', 'sans-serif'],
+              'roboto': ['Roboto', 'sans-serif'],
+              'lato': ['Lato', 'sans-serif'],
+              'arial': ['Arial', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Additional styles for PRD themes */
+      .prd-content.theme-light {
+        background-color: #ffffff;
+        color: #111827;
+      }
+      .prd-content.theme-light h2,
+      .prd-content.theme-light h3,
+      .prd-content.theme-light h4,
+      .prd-content.theme-light strong {
+        color: #111827;
+      }
+      .prd-content.theme-light p,
+      .prd-content.theme-light li {
+        color: #374151;
+      }
+
+      /* Notification Toast Animation */
+      @keyframes fade-in-out {
+        0% { opacity: 0; transform: translateY(20px); }
+        10% { opacity: 1; transform: translateY(0); }
+        90% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(20px); }
+      }
+      .notification {
+        animation: fade-in-out 4s ease-in-out forwards;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-brand-primary text-brand-text-primary">
+    <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
