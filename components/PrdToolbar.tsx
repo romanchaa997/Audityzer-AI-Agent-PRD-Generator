@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SaveIcon } from './icons/SaveIcon';
 import { LoadIcon } from './icons/LoadIcon';
@@ -59,6 +58,8 @@ export const PrdToolbar: React.FC<PrdToolbarProps> = ({
         >
           <option value="theme-dark">Dark</option>
           <option value="theme-light">Light</option>
+          <option value="theme-blueprint">Blueprint</option>
+          <option value="theme-matrix">Matrix</option>
         </select>
       </div>
 

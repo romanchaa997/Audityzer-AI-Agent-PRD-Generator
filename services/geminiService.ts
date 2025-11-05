@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 
 const API_KEY = process.env.API_KEY;
@@ -12,7 +13,7 @@ export async function generatePrd(features: string): Promise<string> {
   const model = 'gemini-2.5-pro';
 
   const prompt = `
-    You are a world-class AI product manager. Your task is to create an exceptionally detailed and comprehensive product requirements document (PRD) for a fictional product called "Audityzer AI Agent," an advanced Web3 community management and analytics platform. Your output must provide deep, actionable insights in every section, going far beyond surface-level descriptions.
+    You are a world-class AI product manager and senior software architect. Your task is to create an exceptionally detailed and comprehensive product requirements document (PRD) for a fictional product called "Audityzer AI Agent," an advanced Web3 community management and analytics platform. Your output must provide deep, actionable insights in every section, going far beyond surface-level descriptions.
 
     Based on the following feature categories, generate a professional PRD.
 
@@ -25,26 +26,38 @@ export async function generatePrd(features: string): Promise<string> {
 
     1.  **Revision History**: This MUST be the absolute first section. It MUST be an HTML table with a \`<thead>\` containing the exact column headers: 'Version', 'Date', 'Author', and 'Changes'. The \`<tbody>\` MUST contain one pre-filled row with the following data: Version '1.0', today's date, Author 'AI Agent', and Changes 'Initial document generation'. Adherence to this format is mandatory.
 
-    2.  **Executive Summary**: A concise (2-3 sentences) and powerful description of the product's core value proposition, target market, and key differentiator.
+    2.  **Executive Summary**: Provide a granular breakdown, not a single paragraph. It must include:
+        -   **Problem Statement**: What is the core problem this product solves for Web3 communities?
+        -   **Solution**: How does the Audityzer AI Agent address this problem?
+        -   **Target Audience**: Who is the primary user of this product?
+        -   **Unique Value Proposition (UVP)**: What makes this solution uniquely better than alternatives?
 
-    3.  **Feature Specifications**: For each feature category provided, detail:
-        -   **Functional Requirements**: Clearly describe what the feature does from a user's perspective.
-        -   **Technical Implementation Approach**: Suggest a high-level technical strategy (e.g., "Use a fine-tuned LLM for intent recognition...").
-        -   **Success Metrics and KPIs**: Provide specific, measurable metrics (e.g., "Reduce average community support ticket response time by 30%").
+    3.  **Feature Specifications**: For each feature category, provide an in-depth breakdown. This section is critical for the development team, so be extremely clear and granular.
+        -   **Functional Requirements**:
+            -   **User-Facing Capabilities**: List exactly what the user can see and do.
+            -   **Backend Processes**: Describe the key automated processes and logic that happen behind the scenes.
+            -   **Acceptance Criteria**: Provide a set of specific, testable criteria that must be met for the feature to be considered complete (e.g., "Given a user is authenticated, when they navigate to the dashboard, then the on-chain activity for their connected wallet is displayed within 2 seconds.").
+        -   **Technical Implementation Approach**:
+            -   **High-Level Strategy**: Outline the general approach.
+            -   **Key Technologies/Services**: Suggest specific libraries, frameworks, or cloud services that could be used.
+            -   **Potential Risks**: Identify potential technical challenges or risks (e.g., "API rate limiting from third-party services").
+        -   **Success Metrics and KPIs**:
+            -   **Primary Metric**: The single most important metric to measure success.
+            -   **Secondary/Guardrail Metrics**: Other important metrics to monitor, including those that ensure we're not negatively impacting other areas.
         -   **Priority Level**: P0/P1/P2.
-        -   **Dependencies and Integration Requirements**: (e.g., "Requires read-access to Discord APIs and a wallet connection for token-gating").
+        -   **Dependencies**: List any other features or systems this depends on.
 
     4.  **User Stories**: For the highest priority features, write 2-3 detailed user stories. Follow the format: "As a [user type], I want [functionality] so that [benefit]", ensuring each story clearly articulates user value.
 
-    5.  **Technical Architecture Overview**: A deeply detailed, high-level system design. Do not be generic.
-        -   **Core Components and Their Interactions**: Specify potential microservices (e.g., 'On-Chain Event Listener', 'Discord Bot Service', 'Analytics Engine') and their communication methods (e.g., REST for synchronous calls, gRPC for internal high-performance communication, message queues like RabbitMQ or NATS for asynchronous tasks).
-        -   **Data Flow and Storage Requirements**: Suggest specific databases for specific needs (e.g., PostgreSQL or a similar SQL DB for structured user data, a vector database like Pinecone or Weaviate for semantic search on community chats, and a time-series DB like TimescaleDB for analytics). Detail the data pipeline (e.g., using Kafka for streaming on-chain events).
-        -   **API and Integration Points**: Describe the API strategy (e.g., a public REST API for clients, internal GraphQL for flexibility), webhook strategies for real-time updates from platforms like Discord, and key third-party integrations (e.g., Alchemy/Infura for node access, The Graph for indexed data, Stripe for billing).
+    5.  **Technical Architecture Overview**: A deeply detailed, high-level system design. You MUST NOT be generic.
+        -   **Core Components and Their Interactions**: You MUST specify example microservices such as 'On-Chain Event Listener' and 'Analytics Engine'. You MUST detail their communication protocols, explaining the use cases for REST (e.g., for public client communication) and gRPC (e.g., for high-performance internal microservice communication).
+        -   **Data Flow and Storage Requirements**: You MUST suggest a multi-database strategy. For example, suggest PostgreSQL for relational user data, a vector DB (like Pinecone or Weaviate) for semantic search, and a time-series database like TimescaleDB for handling high-volume event data. You MUST also describe a data pipeline architecture, specifically mentioning the use of Kafka to stream data between services.
+        -   **API and Integration Points**: You MUST detail the API strategy (e.g., versioned REST APIs, internal GraphQL APIs), describe the use of webhooks for real-time integrations, and list critical third-party integrations, specifically including services like Alchemy (for blockchain node access) and Stripe (for payment processing).
 
     6.  **Go-to-Market Strategy**: A concrete, actionable plan.
-        -   **Target User Personas**: Create and describe specific user personas with names, roles, and pain points (e.g., "Alex, the overwhelmed DAO Community Manager," or "Chloe, the data-driven Web3 Project Founder").
-        -   **Tiered Pricing Model**: Propose a detailed, tiered pricing model (e.g., Freemium, Pro, Enterprise). For each tier, break down the specific features, usage limits (e.g., number of connected accounts, API call limits), and price points.
-        -   **Phased Rollout Plan**: Outline a clear, phased launch plan (Alpha, Beta, Public Launch) with specific objectives, target user counts, and key milestones for each phase.
+        -   **Target User Personas**: Create and describe specific user personas with names, roles, and pain points. Examples: "Alex, the overwhelmed DAO Community Manager who struggles with scaling support and filtering spam" and "Chloe, the data-driven Web3 Project Founder who needs actionable insights on community engagement and sentiment."
+        -   **Tiered Pricing Model**: Propose a detailed, tiered pricing model (e.g., Freemium, Pro, Enterprise). For each tier, break down the specific features included, usage limits (e.g., 'Freemium: 1 connected Discord, 100 on-chain alerts/month', 'Pro: 5 connected accounts, 10,000 alerts/month, basic analytics'), and clear price points. Articulate the core value proposition of upgrading to each tier.
+        -   **Phased Rollout Plan**: Outline a clear, phased launch plan with specific objectives, target user counts, key milestones, and success criteria for each phase. Example: 'Alpha: Onboard 10-15 design partners, focus on core feature stability, success is >80% weekly active users.' 'Beta: Scale to 100-200 teams, gather feedback on analytics and pricing, success is achieving first 10 paying customers.' 'Public Launch: Full market release, focus on growth marketing and user acquisition funnels, success is a 5% week-over-week user growth rate.'
 
     **Output Formatting Instructions:**
     - The entire response MUST be a single, well-structured HTML document fragment.

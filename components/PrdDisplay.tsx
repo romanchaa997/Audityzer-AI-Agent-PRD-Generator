@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { LoadingSpinner } from './icons/LoadingSpinner';
 import { PrdToolbar } from './PrdToolbar';
@@ -38,6 +37,17 @@ const downloadFile = (content: string, fileName: string, mimeType: string) => {
   URL.revokeObjectURL(url);
 };
 
+const getThemeBackgroundColor = (theme: string) => {
+    switch(theme) {
+        case 'theme-light': return '#ffffff';
+        case 'theme-blueprint': return '#F0F4F8';
+        case 'theme-matrix': return '#010101';
+        case 'theme-dark':
+        default:
+            return '#1A1A2E';
+    }
+}
+
 export const PrdDisplay: React.FC<PrdDisplayProps> = ({
   content,
   isLoading,
@@ -61,7 +71,7 @@ export const PrdDisplay: React.FC<PrdDisplayProps> = ({
     try {
         const canvas = await window.html2canvas(contentElement, {
           scale: 2, // Higher scale for better quality
-          backgroundColor: theme === 'theme-light' ? '#ffffff' : '#1A1A2E',
+          backgroundColor: getThemeBackgroundColor(theme),
         });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
