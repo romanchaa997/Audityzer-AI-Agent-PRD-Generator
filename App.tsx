@@ -5,32 +5,71 @@ import { FeatureInput } from './components/FeatureInput';
 import { PrdDisplay } from './components/PrdDisplay';
 import { generatePrd } from './services/geminiService';
 
-const initialFeatures = `- Onchain Intelligence Dashboard
-- AI-Powered Community Concierge  
-- Automated Analytics & Reporting
-- Gamified Giveaways & Bounties
-- Security Health Bot
-- Dynamic Integration Layer
-- Compliance & Transparency Bot`;
+// Define the structure for a single feature with a description
+export interface Feature {
+  id: number;
+  name: string;
+  description: string;
+}
 
-const PRD_LOCAL_STORAGE_KEY = 'audityzer_prd_content';
+// Define the structure for a single version
+interface Version {
+  id: number; // Using timestamp as a unique ID
+  timestamp: string;
+  content: string;
+  features: Feature[];
+}
+
+const initialFeaturesList = [
+  'Onchain Intelligence Dashboard',
+  'AI-Powered Community Concierge',
+  'Automated Analytics & Reporting',
+  'Gamified Giveaways & Bounties',
+  'Security Health Bot',
+  'Dynamic Integration Layer',
+  'Compliance & Transparency Bot',
+];
+
+const initialFeatures: Feature[] = initialFeaturesList.map((name, index) => ({
+  id: Date.now() + index,
+  name,
+  description: '',
+}));
+
+
+const PRD_VERSIONS_LOCAL_STORAGE_KEY = 'audityzer_prd_versions';
 const FONT_LOCAL_STORAGE_KEY = 'audityzer_prd_font';
 
 function App() {
-  const [features, setFeatures] = useState<string>(initialFeatures);
+  const [features, setFeatures] = useState<Feature[]>(initialFeatures);
   const [prdContent, setPrdContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<string>('theme-dark');
   const [fontFamily, setFontFamily] = useState<string>('font-inter');
   const [notification, setNotification] = useState<string | null>(null);
+  const [versionHistory, setVersionHistory] = useState<Version[]>([]);
+  const [template, setTemplate] = useState<string>('agile');
 
   useEffect(() => {
-    // Load saved PRD and font from local storage on initial render
-    const savedPrd = localStorage.getItem(PRD_LOCAL_STORAGE_KEY);
-    if (savedPrd) {
-      setPrdContent(savedPrd);
+    // Load saved versions and font from local storage on initial render
+    const savedVersionsRaw = localStorage.getItem(PRD_VERSIONS_LOCAL_STORAGE_KEY);
+    if (savedVersionsRaw) {
+      try {
+        const savedVersions = JSON.parse(savedVersionsRaw) as Version[];
+        if (Array.isArray(savedVersions) && savedVersions.length > 0) {
+          setVersionHistory(savedVersions);
+          // Load the most recent version into the editor
+          const latestVersion = savedVersions[savedVersions.length - 1];
+          setPrdContent(latestVersion.content);
+          setFeatures(latestVersion.features);
+        }
+      } catch (e) {
+        console.error("Failed to parse version history from localStorage", e);
+        localStorage.removeItem(PRD_VERSIONS_LOCAL_STORAGE_KEY); // Clear corrupted data
+      }
     }
+
     const savedFont = localStorage.getItem(FONT_LOCAL_STORAGE_KEY);
     if (savedFont) {
       setFontFamily(savedFont);
@@ -52,8 +91,8 @@ function App() {
   };
 
   const handleGeneratePrd = useCallback(async () => {
-    if (!features.trim()) {
-      setError('Feature list cannot be empty.');
+    if (features.length === 0 || features.every(f => !f.name.trim())) {
+      setError('Feature list cannot be empty. Please add at least one feature.');
       return;
     }
     setIsLoading(true);
@@ -61,10 +100,21 @@ function App() {
     setPrdContent('');
 
     try {
-      const content = await generatePrd(features);
+      const content = await generatePrd(features, template);
       setPrdContent(content);
-      localStorage.setItem(PRD_LOCAL_STORAGE_KEY, content); // Auto-save on generation
-      setNotification('PRD generated and saved successfully!');
+      
+      const newVersion: Version = {
+        id: Date.now(),
+        timestamp: new Date().toLocaleString(),
+        content,
+        features,
+      };
+      
+      const updatedHistory = [...versionHistory, newVersion];
+      setVersionHistory(updatedHistory);
+      localStorage.setItem(PRD_VERSIONS_LOCAL_STORAGE_KEY, JSON.stringify(updatedHistory));
+
+      setNotification('PRD generated and saved as a new version!');
     } catch (e) {
       console.error(e);
       let userMessage = 'An unknown error occurred. Please try again.';
@@ -86,27 +136,47 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [features]);
+  }, [features, versionHistory, template]);
 
   const handleSavePrd = () => {
-    localStorage.setItem(PRD_LOCAL_STORAGE_KEY, prdContent);
-    setNotification('PRD saved successfully!');
+    if (!prdContent.trim()) {
+      setNotification('Cannot save empty PRD.');
+      return;
+    }
+    const newVersion: Version = {
+      id: Date.now(),
+      timestamp: new Date().toLocaleString(),
+      content: prdContent,
+      features: features,
+    };
+    const updatedHistory = [...versionHistory, newVersion];
+    setVersionHistory(updatedHistory);
+    localStorage.setItem(PRD_VERSIONS_LOCAL_STORAGE_KEY, JSON.stringify(updatedHistory));
+    setNotification('Current draft saved as a new version!');
   };
 
-  const handleLoadPrd = () => {
-    const savedPrd = localStorage.getItem(PRD_LOCAL_STORAGE_KEY);
-    if (savedPrd) {
-      setPrdContent(savedPrd);
-      setNotification('PRD loaded from local storage.');
+  const handleLoadVersion = (versionId: number) => {
+    const versionToLoad = versionHistory.find(v => v.id === versionId);
+    if (versionToLoad) {
+      setPrdContent(versionToLoad.content);
+      setFeatures(versionToLoad.features);
+      setNotification(`Loaded version from ${versionToLoad.timestamp}.`);
     } else {
-      setNotification('No saved PRD found.');
+      setNotification('Could not find the selected version.');
     }
   };
 
   const handleClearPrd = () => {
     setPrdContent('');
-    localStorage.removeItem(PRD_LOCAL_STORAGE_KEY);
     setNotification('PRD content cleared.');
+  };
+
+  const handleClearHistory = () => {
+    setPrdContent('');
+    setFeatures(initialFeatures);
+    setVersionHistory([]);
+    localStorage.removeItem(PRD_VERSIONS_LOCAL_STORAGE_KEY);
+    setNotification('Version history and current PRD have been cleared.');
   };
 
   return (
@@ -119,19 +189,23 @@ function App() {
             setFeatures={setFeatures}
             onGenerate={handleGeneratePrd}
             isLoading={isLoading}
+            template={template}
+            setTemplate={setTemplate}
           />
           <PrdDisplay
             content={prdContent}
             isLoading={isLoading}
             error={error}
             onSave={handleSavePrd}
-            onLoad={handleLoadPrd}
             onClear={handleClearPrd}
             theme={theme}
             setTheme={setTheme}
             fontFamily={fontFamily}
             setFontFamily={handleSetFontFamily}
             setNotification={setNotification}
+            versionHistory={versionHistory.map(v => ({ id: v.id, timestamp: v.timestamp }))}
+            onLoadVersion={handleLoadVersion}
+            onClearHistory={handleClearHistory}
           />
         </div>
       </main>

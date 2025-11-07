@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+
+import React, { useRef, useState, useEffect } from 'react';
 import { LoadingSpinner } from './icons/LoadingSpinner';
 import { PrdToolbar } from './PrdToolbar';
 
@@ -11,18 +12,26 @@ declare global {
   }
 }
 
+// Define summary for version history dropdown
+interface VersionSummary {
+  id: number;
+  timestamp: string;
+}
+
 interface PrdDisplayProps {
   content: string;
   isLoading: boolean;
   error: string | null;
   onSave: () => void;
-  onLoad: () => void;
   onClear: () => void;
   theme: string;
   setTheme: (theme: string) => void;
   fontFamily: string;
   setFontFamily: (font: string) => void;
   setNotification: (message: string) => void;
+  versionHistory: VersionSummary[];
+  onLoadVersion: (versionId: number) => void;
+  onClearHistory: () => void;
 }
 
 const downloadFile = (content: string, fileName: string, mimeType: string) => {
@@ -53,15 +62,73 @@ export const PrdDisplay: React.FC<PrdDisplayProps> = ({
   isLoading,
   error,
   onSave,
-  onLoad,
   onClear,
   theme,
   setTheme,
   fontFamily,
   setFontFamily,
   setNotification,
+  versionHistory,
+  onLoadVersion,
+  onClearHistory,
 }) => {
   const prdContentRef = useRef<HTMLDivElement>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const contentElement = prdContentRef.current;
+    if (!contentElement) return;
+
+    // First, remove old highlights
+    const existingHighlights = contentElement.querySelectorAll('mark.search-highlight');
+    existingHighlights.forEach(mark => {
+      const parent = mark.parentNode;
+      if (parent) {
+        parent.replaceChild(document.createTextNode(mark.textContent || ''), mark);
+        parent.normalize(); // Merge adjacent text nodes
+      }
+    });
+
+    if (!searchTerm.trim()) {
+      return;
+    }
+    
+    // Escape special regex characters
+    const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedTerm})`, 'gi');
+    
+    // Using TreeWalker to only search within text nodes
+    const walker = document.createTreeWalker(contentElement, NodeFilter.SHOW_TEXT, null);
+    const nodesToProcess: Text[] = [];
+    let currentNode = walker.nextNode();
+    while (currentNode) {
+      if (currentNode instanceof Text && (currentNode.nodeValue || '').match(regex)) {
+        if (currentNode.parentElement?.tagName.toLowerCase() !== 'script' && currentNode.parentElement?.tagName.toLowerCase() !== 'style') {
+          nodesToProcess.push(currentNode);
+        }
+      }
+      currentNode = walker.nextNode();
+    }
+    
+    nodesToProcess.forEach(node => {
+      const parts = (node.nodeValue || '').split(regex);
+      if (parts.length <= 1) return;
+
+      const fragment = document.createDocumentFragment();
+      parts.forEach((part, i) => {
+        if (i % 2 === 1) {
+          const mark = document.createElement('mark');
+          mark.className = 'search-highlight bg-yellow-400 text-black px-0.5 rounded-sm';
+          mark.textContent = part;
+          fragment.appendChild(mark);
+        } else if (part) {
+          fragment.appendChild(document.createTextNode(part));
+        }
+      });
+      node.parentNode?.replaceChild(fragment, node);
+    });
+
+  }, [searchTerm, content, theme, fontFamily]);
 
   const handleExportPdf = async () => {
     const { jsPDF } = window.jspdf;
@@ -69,6 +136,9 @@ export const PrdDisplay: React.FC<PrdDisplayProps> = ({
     if (!contentElement) return;
 
     try {
+        setSearchTerm(''); // Temporarily disable search highlights for clean PDF
+        await new Promise(resolve => setTimeout(resolve, 50)); // Allow DOM to update
+
         const canvas = await window.html2canvas(contentElement, {
           scale: 2, // Higher scale for better quality
           backgroundColor: getThemeBackgroundColor(theme),
@@ -99,10 +169,9 @@ export const PrdDisplay: React.FC<PrdDisplayProps> = ({
   return (
     <div className="bg-brand-secondary rounded-lg shadow-lg border border-brand-accent flex flex-col h-full min-h-[500px] lg:h-auto">
       <div className="flex justify-between items-center p-4 border-b border-brand-accent">
-          <h2 className="text-2xl font-semibold text-brand-text-primary">2. Generated PRD</h2>
+          <h2 className="text-2xl font-semibold text-brand-text-primary shrink-0 mr-4">Generated PRD</h2>
           <PrdToolbar
             onSave={onSave}
-            onLoad={onLoad}
             onClear={onClear}
             onExportPdf={handleExportPdf}
             onExportMarkdown={handleExportMarkdown}
@@ -111,6 +180,11 @@ export const PrdDisplay: React.FC<PrdDisplayProps> = ({
             fontFamily={fontFamily}
             setFontFamily={setFontFamily}
             hasContent={!!content && !isLoading}
+            versionHistory={versionHistory}
+            onLoadVersion={onLoadVersion}
+            onClearHistory={onClearHistory}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
           />
       </div>
       <div className="flex-grow p-2 overflow-hidden">
